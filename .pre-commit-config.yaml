@@ -40,6 +40,9 @@ repos:
     rev: 2ccb47ff45ad361a21071a7eedda4c37e6ae8c5a # frozen: v2.4.2
     hooks:
       - id: codespell
+        # JUnit's @AfterAll, not the English "after all".
+        args:
+          - --ignore-words-list=afterall
 
   - repo: https://github.com/rhysd/actionlint
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca # frozen: v1.7.12
@@ -78,6 +81,18 @@ repos:
     rev: 534166213006ec869b773b7ed8c6ebeaad1165d0 # frozen: v0.23.0
     hooks:
       - id: markdownlint-cli2
+
+  - repo: local
+    hooks:
+      # Formatting is owned by the build, so pre-commit and CI cannot disagree.
+      # Goes through the script so it also works without a local Maven.
+      # Run `scripts/test.sh spotless:apply` to fix what this reports.
+      - id: spotless
+        name: spotless
+        entry: scripts/test.sh -q spotless:check
+        language: system
+        pass_filenames: false
+        files: \.java$
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 2e491b456df703bb32b909cc934781ff2a0c23de # frozen: 43.263.1

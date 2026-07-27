@@ -1,0 +1,89 @@
+name: Release
+
+# The pom version is the single source of truth: bumping it on main is what
+# releases. Every push to main that touches pom.xml is inspected, and the run
+# stops immediately unless the declared version has no tag yet, so edits to
+# other pom properties (a Keycloak bump, a new dependency) cost one cheap job.
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - "pom.xml"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      # An existing tag, rather than a diff against the previous commit, is what
+      # marks a version as already released: that answer stays correct when the
+      # workflow is re-run, when main is squashed, and when a release failed
+      # halfway and the bump has to be retried.
+      - name: Check whether the pom version is unreleased
+        id: version
+        run: |
+          pom_version="$(mvn -q -B help:evaluate \
+            -Dexpression=project.version -DforceStdout)"
+          tag="v${pom_version}"
+          echo "pom_version=$pom_version" >>"$GITHUB_OUTPUT"
+          echo "tag=$tag" >>"$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "released=false" >>"$GITHUB_OUTPUT"
+            echo "::notice::$tag already exists; nothing to release."
+          else
+            echo "released=true" >>"$GITHUB_OUTPUT"
+            echo "::notice::Releasing $tag."
+          fi
+
+      - name: Build
+        if: steps.version.outputs.released == 'true'
+        run: mvn -B clean package
+
+      - name: Generate GitHub App token
+        if: steps.version.outputs.released == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          app-id: ${{ vars.NETEYE_APP_ID }}
+          private-key: ${{ secrets.NETEYE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # Tagged only once the jar exists, so a build failure leaves the version
+      # free to be released again by re-running the workflow.
+      - name: Tag the release
+        if: steps.version.outputs.released == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git -c "http.https://github.com/.extraheader=" push \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:refs/tags/${TAG}"
+
+      - name: Create or update GitHub release
+        if: steps.version.outputs.released == 'true'
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: target/keycloak-oidc-group-mapper-*.jar

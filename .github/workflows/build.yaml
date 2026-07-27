@@ -1,0 +1,34 @@
+name: Build
+
+# Pull requests build the jar and run the tests, unit plus integration, but
+# publish nothing: only tags produce a jar users can download. The integration
+# tests start Keycloak through Testcontainers, which works out of the box on
+# the GitHub-hosted runners because they ship with Docker.
+on:
+  pull_request:
+    branches:
+      - "**"
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B clean verify
