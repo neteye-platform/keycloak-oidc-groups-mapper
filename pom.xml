@@ -22,7 +22,7 @@
         <junit.version>6.1.2</junit.version>
         <testcontainers.version>1.20.4</testcontainers.version>
         <jackson.version>2.18.2</jackson.version>
-        <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
 
         <spotless.version>2.44.5</spotless.version>
     </properties>
