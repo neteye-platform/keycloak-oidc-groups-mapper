@@ -21,7 +21,7 @@
         <!-- test settings -->
         <junit.version>6.1.2</junit.version>
         <testcontainers.version>1.21.4</testcontainers.version>
-        <jackson.version>2.18.9</jackson.version>
+        <jackson.version>2.22.1</jackson.version>
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
 
         <spotless.version>3.9.0</spotless.version>
