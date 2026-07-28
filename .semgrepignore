@@ -1,0 +1,2 @@
+# Tests: fixtures, mock providers and throwaway credentials, not shipped code.
+src/test/
