@@ -24,7 +24,7 @@
         <jackson.version>2.18.9</jackson.version>
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
 
-        <spotless.version>2.46.1</spotless.version>
+        <spotless.version>3.9.0</spotless.version>
     </properties>
 
     <dependencies>
