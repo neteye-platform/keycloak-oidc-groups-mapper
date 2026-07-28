@@ -15,13 +15,13 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <keycloak.version>26.6.2</keycloak.version>
+        <keycloak.version>26.6.3</keycloak.version>
         <keycloak.versionedArtifactName>keycloak-${keycloak.version}</keycloak.versionedArtifactName>
 
         <!-- test settings -->
         <junit.version>6.1.2</junit.version>
         <testcontainers.version>1.20.4</testcontainers.version>
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>2.18.9</jackson.version>
         <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
 
         <spotless.version>3.9.0</spotless.version>
