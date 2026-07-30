@@ -69,6 +69,28 @@ public class GroupOIDCMapperUtil {
     }
 
     /**
+     * Tells whether a group lives below the parent path this mapper manages. Memberships outside of
+     * it belong to somebody else (an administrator, another mapper) and must be left alone.
+     */
+    public boolean isManagedGroup(GroupModel group) {
+        if (group == null || normalizedParentGroupPath == null) {
+            return false;
+        }
+
+        return buildGroupPath(group).startsWith(normalizedParentGroupPath + "/");
+    }
+
+    static String buildGroupPath(GroupModel group) {
+        StringBuilder path = new StringBuilder();
+
+        for (GroupModel current = group; current != null; current = current.getParent()) {
+            path.insert(0, current.getName()).insert(0, '/');
+        }
+
+        return path.toString();
+    }
+
+    /**
      * A group name coming from the token is a single path segment, so any slash it contains would
      * otherwise be read as a nesting level.
      */

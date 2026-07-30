@@ -176,17 +176,13 @@ class GroupOIDCMapperIT {
     }
 
     /**
-     * Pins the current behaviour of {@code updateBrokeredUser}, which drops the user from
-     * <em>every</em> group before re-joining the claimed ones — not just from the ones below the
-     * parent path this mapper manages.
-     *
-     * <p>A group assigned by an administrator therefore does not survive the next login. That is
-     * very likely undesirable, but changing it would change behaviour for existing installations,
-     * so it is tracked separately; this test exists so that such a change cannot happen unnoticed.
+     * {@code updateBrokeredUser} re-syncs only the memberships below the parent path it manages: a
+     * group the token no longer claims is dropped, while a group assigned elsewhere (by an
+     * administrator, by another mapper) survives the login.
      */
     @Test
-    @DisplayName("A re-login re-syncs the claimed groups and drops every other membership")
-    void aReloginResyncsGroupsAndDropsUnrelatedMemberships(TestInfo testInfo) throws Exception {
+    @DisplayName("A re-login re-syncs the claimed groups and keeps unrelated memberships")
+    void aReloginResyncsGroupsAndKeepsUnrelatedMemberships(TestInfo testInfo) throws Exception {
         givenRealm(testInfo, List.of("group1"), "/parent-group");
         whenUserLogsIn();
         assertIterableEquals(List.of("/parent-group/group1"), userGroupPaths());
@@ -197,6 +193,7 @@ class GroupOIDCMapperIT {
 
         whenUserLogsIn();
 
-        assertIterableEquals(List.of("/parent-group/group2"), userGroupPaths());
+        assertIterableEquals(
+                List.of("/manually-assigned", "/parent-group/group2"), userGroupPaths());
     }
 }

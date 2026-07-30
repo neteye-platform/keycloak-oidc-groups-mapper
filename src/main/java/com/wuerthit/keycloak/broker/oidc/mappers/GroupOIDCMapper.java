@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.mappers.AbstractClaimMapper;
@@ -114,7 +115,22 @@ public class GroupOIDCMapper extends AbstractClaimMapper {
         ArrayList<GroupModel> kcGroups =
                 factory.createGroupsIfNotExist(getGroups(context, mapperModel));
 
-        user.getGroupsStream().forEach(user::leaveGroup);
+        // Only the memberships below the managed parent path are re-synced from the token; every
+        // other group the user belongs to is none of this mapper's business.
+        Set<String> claimedGroupIds = new HashSet<>();
+        for (GroupModel kcGroup : kcGroups) {
+            claimedGroupIds.add(kcGroup.getId());
+        }
+
+        List<GroupModel> staleGroups =
+                user.getGroupsStream()
+                        .filter(factory::isManagedGroup)
+                        .filter(group -> !claimedGroupIds.contains(group.getId()))
+                        .collect(Collectors.toList());
+
+        for (GroupModel staleGroup : staleGroups) {
+            user.leaveGroup(staleGroup);
+        }
 
         for (GroupModel kcGroup : kcGroups) {
             user.joinGroup(kcGroup);
