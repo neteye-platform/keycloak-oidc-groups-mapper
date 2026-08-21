@@ -20,6 +20,18 @@ repos:
       - id: detect-private-key
       - id: check-executables-have-shebangs
 
+  - repo: local
+    hooks:
+      # Formatting is owned by the build, so pre-commit and CI cannot disagree.
+      # Goes through the script so it also works without a local Maven.
+      # Run `scripts/test.sh spotless:apply` to fix what this reports.
+      - id: spotless
+        name: spotless
+        entry: scripts/test.sh -q spotless:check
+        language: system
+        pass_filenames: false
+        files: \.java$
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
     hooks:
@@ -81,18 +93,6 @@ repos:
     rev: b82a6c8896e491b9cb377a99ff3412131920681b # frozen: v0.23.2
     hooks:
       - id: markdownlint-cli2
-
-  - repo: local
-    hooks:
-      # Formatting is owned by the build, so pre-commit and CI cannot disagree.
-      # Goes through the script so it also works without a local Maven.
-      # Run `scripts/test.sh spotless:apply` to fix what this reports.
-      - id: spotless
-        name: spotless
-        entry: scripts/test.sh -q spotless:check
-        language: system
-        pass_filenames: false
-        files: \.java$
 
   - repo: https://github.com/renovatebot/pre-commit-hooks
     rev: 88c30e440f96b3be21b565d4c5b4e9e9941c827c # frozen: 44.39.0

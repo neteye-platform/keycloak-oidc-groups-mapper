@@ -51,10 +51,10 @@ static block in `GroupOIDCMapper` that builds `mapperConfigProperties`.
 
 ## Releasing
 
-Bump `<version>` in `pom.xml` and merge it to `main`; that is the whole
-release. The workflow reads the version from the pom, stops if a `vX.Y.Z` tag
-for it already exists, and otherwise builds the jar, pushes the tag and
-publishes the release.
+To release, update `<version>` in `pom.xml` and merge the change to `main`. The
+workflow reads that version. If a GitHub Release for `vX.Y.Z` already exists,
+the workflow does nothing. Otherwise it builds the jar, retains an existing tag
+or creates a missing one, then creates the GitHub Release.
 Keycloak itself is pinned by the `keycloak.version` property, which drives both
 the compile dependencies and the container image the tests run against.
 
