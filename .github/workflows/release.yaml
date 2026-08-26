@@ -1,15 +1,9 @@
 name: Release
 
-# The pom version is the single source of truth: bumping it on main is what
-# releases. Every push to main that touches pom.xml is inspected, and the run
-# stops immediately unless the declared version has no tag yet, so edits to
-# other pom properties (a Keycloak bump, a new dependency) cost one cheap job.
 on:
   push:
     branches:
       - "main"
-    paths:
-      - "pom.xml"
   workflow_dispatch:
 
 concurrency:
@@ -33,32 +27,34 @@ jobs:
           distribution: temurin
           cache: maven
 
-      # An existing tag, rather than a diff against the previous commit, is what
-      # marks a version as already released: that answer stays correct when the
-      # workflow is re-run, when main is squashed, and when a release failed
-      # halfway and the bump has to be retried.
-      - name: Check whether the pom version is unreleased
+      - name: Check whether the pom version has a GitHub Release
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           pom_version="$(mvn -q -B help:evaluate \
             -Dexpression=project.version -DforceStdout)"
           tag="v${pom_version}"
           echo "pom_version=$pom_version" >>"$GITHUB_OUTPUT"
           echo "tag=$tag" >>"$GITHUB_OUTPUT"
-          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-            echo "released=false" >>"$GITHUB_OUTPUT"
-            echo "::notice::$tag already exists; nothing to release."
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release_exists=true" >>"$GITHUB_OUTPUT"
+            echo "::notice::GitHub Release $tag already exists; nothing to release."
           else
-            echo "released=true" >>"$GITHUB_OUTPUT"
+            echo "release_exists=false" >>"$GITHUB_OUTPUT"
             echo "::notice::Releasing $tag."
           fi
 
       - name: Build
-        if: steps.version.outputs.released == 'true'
-        run: mvn -B clean package
+        if: steps.version.outputs.release_exists == 'false'
+        env:
+          POM_VERSION: ${{ steps.version.outputs.pom_version }}
+        run: |
+          mvn -B clean package
+          test -f "target/keycloak-oidc-group-mapper-${POM_VERSION}.jar"
 
       - name: Generate GitHub App token
-        if: steps.version.outputs.released == 'true'
+        if: steps.version.outputs.release_exists == 'false'
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: generate-token
         with:
@@ -66,24 +62,26 @@ jobs:
           private-key: ${{ secrets.NETEYE_APP_PRIVATE_KEY }}
           permission-contents: write
 
-      # Tagged only once the jar exists, so a build failure leaves the version
-      # free to be released again by re-running the workflow.
       - name: Tag the release
-        if: steps.version.outputs.released == 'true'
+        if: steps.version.outputs.release_exists == 'false'
         env:
-          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          git -c "http.https://github.com/.extraheader=" push \
-            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-            "HEAD:refs/tags/${TAG}"
+          if gh api --method GET "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "::notice::Tag $TAG already exists; retaining it."
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$TAG" \
+              -f sha="$(git rev-parse HEAD)"
+          fi
 
-      - name: Create or update GitHub release
-        if: steps.version.outputs.released == 'true'
+      - name: Create GitHub release
+        if: steps.version.outputs.release_exists == 'false'
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           token: ${{ steps.generate-token.outputs.token }}
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: target/keycloak-oidc-group-mapper-*.jar
+          files: target/keycloak-oidc-group-mapper-${{ steps.version.outputs.pom_version }}.jar
