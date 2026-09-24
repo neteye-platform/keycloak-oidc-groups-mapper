@@ -47,7 +47,21 @@ public class GroupOIDCMapper extends AbstractClaimMapper {
         mapperConfigProperties.add(overrideGroupsPath);
     }
 
-    public static final String PROVIDER_ID = "oidc-groups-mapper";
+    /**
+     * Allows overriding the mapper's provider ID via the {@code OIDC_GROUPS_MAPPER_PROVIDER_ID}
+     * environment variable, so an existing deployment can pin the ID it already persisted for
+     * configured mappers (e.g. {@code neteye-oidc-groups-mapper}) across an upgrade, instead of
+     * silently losing every mapper instance that references the old ID.
+     */
+    public static final String PROVIDER_ID_ENV_VAR = "OIDC_GROUPS_MAPPER_PROVIDER_ID";
+
+    private static final String DEFAULT_PROVIDER_ID = "oidc-group-mapper";
+    public static final String PROVIDER_ID = resolveProviderId();
+
+    private static String resolveProviderId() {
+        String override = System.getenv(PROVIDER_ID_ENV_VAR);
+        return (override == null || override.isBlank()) ? DEFAULT_PROVIDER_ID : override.trim();
+    }
 
     @Override
     public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
