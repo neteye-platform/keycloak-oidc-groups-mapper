@@ -2,6 +2,7 @@ package com.wuerthit.keycloak.broker.oidc.mappers.support;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wuerthit.keycloak.broker.oidc.mappers.GroupOIDCMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -175,7 +176,7 @@ public class KeycloakAdminApi {
         Map<String, Object> mapper = new LinkedHashMap<>();
         mapper.put("name", "groups");
         mapper.put("identityProviderAlias", alias);
-        mapper.put("identityProviderMapper", "oidc-groups-mapper");
+        mapper.put("identityProviderMapper", GroupOIDCMapper.PROVIDER_ID);
         mapper.put("config", config);
 
         post(
