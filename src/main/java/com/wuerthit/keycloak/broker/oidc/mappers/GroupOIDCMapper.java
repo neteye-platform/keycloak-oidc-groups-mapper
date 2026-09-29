@@ -98,6 +98,7 @@ public class GroupOIDCMapper extends AbstractClaimMapper {
         return "This mapper allow to map groups from a claim in the OIDC token to a full Keycloak group path in the realm.";
     }
 
+    @Override
     public void importNewUser(
             KeycloakSession session,
             RealmModel realm,
@@ -116,6 +117,7 @@ public class GroupOIDCMapper extends AbstractClaimMapper {
         }
     }
 
+    @Override
     public void updateBrokeredUser(
             KeycloakSession session,
             RealmModel realm,
