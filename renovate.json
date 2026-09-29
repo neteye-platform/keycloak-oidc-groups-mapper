@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>neteye-platform/repo-commons"]
+  "extends": ["github>neteye-platform/repo-commons"],
+  "packageRules": [
+    {
+      "description": "Keycloak plugin: the JDK that builds the jar stays on the one its runtime uses. Keycloak 26.6+ supports OpenJDK 25, but the official container image still ships OpenJDK 21 (for FIPS) and Keycloak's own integration tests only cover 17 and 21. Raise this once the image moves.",
+      "matchDatasources": ["java-version"],
+      "allowedVersions": "<22"
+    }
+  ]
 }
