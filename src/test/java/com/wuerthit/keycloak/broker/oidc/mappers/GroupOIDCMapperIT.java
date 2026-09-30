@@ -2,7 +2,6 @@ package com.wuerthit.keycloak.broker.oidc.mappers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wuerthit.keycloak.broker.oidc.mappers.support.BrokeredLogin;
@@ -60,16 +59,14 @@ class GroupOIDCMapperIT {
         Testcontainers.exposeHostPorts(idp.port());
         idp.setBaseUrl("http://host.testcontainers.internal:" + idp.port());
 
-        File mapperJar = new File(System.getProperty("mapper.jar"));
-        assertTrue(
-                mapperJar.isFile(),
-                "The mapper jar is missing at " + mapperJar + "; run `mvn verify`, not `mvn test`");
+        File mapperJar =
+                new File(requiredProperty("mapper.jar", "run `mvn verify`, not `mvn test`"));
+        assertTrue(mapperJar.isFile(), "The mapper jar is missing at " + mapperJar);
 
-        String keycloakVersion = System.getProperty("keycloak.version");
-        assertNotNull(
-                keycloakVersion,
-                "The keycloak.version system property is unset; run `mvn verify`, or pass"
-                        + " -Dkeycloak.version with the value from the pom");
+        String keycloakVersion =
+                requiredProperty(
+                        "keycloak.version",
+                        "run `mvn verify`, or pass -Dkeycloak.version with the value from the pom");
 
         keycloak =
                 new GenericContainer<>("quay.io/keycloak/keycloak:" + keycloakVersion)
@@ -108,6 +105,22 @@ class GroupOIDCMapperIT {
             admin.deleteRealm(realm);
             realm = null;
         }
+    }
+
+    /**
+     * The value of a system property the build is expected to pass, failing with {@code hint} when
+     * it is missing or blank.
+     *
+     * <p>Without this, a missing or blank value fails later and less clearly: {@code new
+     * File(null)} throws a bare NullPointerException, and an empty Keycloak version builds an image
+     * reference with no tag. Neither says how to run the test properly.
+     */
+    private static String requiredProperty(String name, String hint) {
+        String value = System.getProperty(name);
+        assertTrue(
+                value != null && !value.isBlank(),
+                "The " + name + " system property is unset or blank; " + hint);
+        return value;
     }
 
     /**
