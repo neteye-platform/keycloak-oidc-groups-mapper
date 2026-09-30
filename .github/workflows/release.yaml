@@ -26,6 +26,7 @@ jobs:
           java-version: "21.0.12+101.0.LTS"
           distribution: temurin
           cache: maven
+          verify-signature: true
 
       - name: Check whether the pom version has a GitHub Release
         id: version
