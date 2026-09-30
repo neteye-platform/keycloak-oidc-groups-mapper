@@ -35,8 +35,6 @@ import org.testcontainers.utility.MountableFile;
  */
 class GroupOIDCMapperIT {
 
-    private static final String KEYCLOAK_IMAGE =
-            "quay.io/keycloak/keycloak:" + System.getProperty("keycloak.version", "26.6.2");
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "admin";
     private static final String IDP_ALIAS = "neteye-test-oidc";
@@ -61,13 +59,17 @@ class GroupOIDCMapperIT {
         Testcontainers.exposeHostPorts(idp.port());
         idp.setBaseUrl("http://host.testcontainers.internal:" + idp.port());
 
-        File mapperJar = new File(System.getProperty("mapper.jar"));
-        assertTrue(
-                mapperJar.isFile(),
-                "The mapper jar is missing at " + mapperJar + "; run `mvn verify`, not `mvn test`");
+        File mapperJar =
+                new File(requiredProperty("mapper.jar", "run `mvn verify`, not `mvn test`"));
+        assertTrue(mapperJar.isFile(), "The mapper jar is missing at " + mapperJar);
+
+        String keycloakVersion =
+                requiredProperty(
+                        "keycloak.version",
+                        "run `mvn verify`, or pass -Dkeycloak.version with the value from the pom");
 
         keycloak =
-                new GenericContainer<>(KEYCLOAK_IMAGE)
+                new GenericContainer<>("quay.io/keycloak/keycloak:" + keycloakVersion)
                         .withCopyFileToContainer(
                                 MountableFile.forHostPath(mapperJar.toPath()),
                                 "/opt/keycloak/providers/keycloak-oidc-group-mapper.jar")
@@ -103,6 +105,22 @@ class GroupOIDCMapperIT {
             admin.deleteRealm(realm);
             realm = null;
         }
+    }
+
+    /**
+     * The value of a system property the build is expected to pass, failing with {@code hint} when
+     * it is missing or blank.
+     *
+     * <p>Without this, a missing or blank value fails later and less clearly: {@code new
+     * File(null)} throws a bare NullPointerException, and an empty Keycloak version builds an image
+     * reference with no tag. Neither says how to run the test properly.
+     */
+    private static String requiredProperty(String name, String hint) {
+        String value = System.getProperty(name);
+        assertTrue(
+                value != null && !value.isBlank(),
+                "The " + name + " system property is unset or blank; " + hint);
+        return value;
     }
 
     /**
