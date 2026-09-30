@@ -16,8 +16,9 @@ mvn test            # unit tests, no containers, seconds
 mvn verify          # also integration tests, needs a container runtime
 ```
 
-Requires Java 21. `mvn verify` starts a real Keycloak via Testcontainers, so it
-needs Docker or Podman available; `mvn test` does not.
+Requires the JDK the pom pins in `java.version`. `mvn verify` starts a real
+Keycloak via Testcontainers, so it needs Docker or Podman available; `mvn test`
+does not.
 
 Without a local JDK, `scripts/test.sh` takes the same goals and runs Maven in a
 container, handing it the host's container socket so the integration tests
