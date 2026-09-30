@@ -2,6 +2,7 @@ package com.wuerthit.keycloak.broker.oidc.mappers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.wuerthit.keycloak.broker.oidc.mappers.support.BrokeredLogin;
@@ -35,8 +36,6 @@ import org.testcontainers.utility.MountableFile;
  */
 class GroupOIDCMapperIT {
 
-    private static final String KEYCLOAK_IMAGE =
-            "quay.io/keycloak/keycloak:" + System.getProperty("keycloak.version", "26.6.2");
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "admin";
     private static final String IDP_ALIAS = "neteye-test-oidc";
@@ -66,8 +65,14 @@ class GroupOIDCMapperIT {
                 mapperJar.isFile(),
                 "The mapper jar is missing at " + mapperJar + "; run `mvn verify`, not `mvn test`");
 
+        String keycloakVersion = System.getProperty("keycloak.version");
+        assertNotNull(
+                keycloakVersion,
+                "The keycloak.version system property is unset; run `mvn verify`, or pass"
+                        + " -Dkeycloak.version with the value from the pom");
+
         keycloak =
-                new GenericContainer<>(KEYCLOAK_IMAGE)
+                new GenericContainer<>("quay.io/keycloak/keycloak:" + keycloakVersion)
                         .withCopyFileToContainer(
                                 MountableFile.forHostPath(mapperJar.toPath()),
                                 "/opt/keycloak/providers/keycloak-oidc-group-mapper.jar")
