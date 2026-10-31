@@ -20,7 +20,7 @@
         <!-- test settings -->
         <junit.version>6.1.3</junit.version>
         <testcontainers.version>1.21.4</testcontainers.version>
-        <jackson.version>2.22.3</jackson.version>
+        <jackson.version>2.22.4</jackson.version>
         <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
 
         <spotless.version>3.10.4</spotless.version>
@@ -133,14 +133,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.1</version>
             </plugin>
             <!-- Integration tests (*IT): start Keycloak via Testcontainers and
                  need the packaged jar, so they only run on `mvn verify`. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.1</version>
                 <configuration>
                     <systemPropertyVariables>
                         <keycloak.version>${keycloak.version}</keycloak.version>
